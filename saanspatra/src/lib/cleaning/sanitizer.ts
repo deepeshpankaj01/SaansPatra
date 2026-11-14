@@ -3,7 +3,6 @@
  * \n (0x0A), \r (0x0D), and \t (0x09).
  */
 export function stripControlChars(text: string): string {
-  // eslint-disable-next-line no-control-regex
   return text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
 }
 

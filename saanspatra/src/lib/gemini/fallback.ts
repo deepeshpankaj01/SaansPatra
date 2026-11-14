@@ -1,5 +1,5 @@
 import { AnalyticsResult } from '../analytics/types';
-import { BriefingResponse, TranslationResponse } from './schemas';
+import { BriefingResponse, BriefingFinding, TranslationResponse } from './schemas';
 
 /**
  * Deterministic fallback brief generated without LLM.
@@ -11,7 +11,7 @@ export function generateFallbackBrief(
 ): BriefingResponse {
   const { overallAQI, summary, stations, hotspots, evidence } = stats;
 
-  const findings = [
+  const findings: BriefingFinding[] = [
     {
       id: 'F1',
       claim: `Overall regional air quality stands at ${overallAQI.value} (${overallAQI.category})${overallAQI.isProvisional ? ' [Provisional calculation due to limited pollutants]' : ''}, driven primarily by ${overallAQI.dominantPollutant.toUpperCase()} at ${overallAQI.dominantStation}.`,

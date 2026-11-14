@@ -24,7 +24,8 @@ export * from './evidence';
  */
 export function analyzeDataset(
   dataset: ParsedDataset,
-  qualityReport?: QualityReport,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _qualityReport?: QualityReport,
 ): AnalyticsResult {
   const { rows, stationIds } = dataset;
 

@@ -9,6 +9,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
+ENV BUILD_STANDALONE=true
 RUN pnpm exec next build
 
 # ── Stage 2: Runner ──────────────────────────────────────────────

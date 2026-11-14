@@ -1,36 +1,364 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SaansPatra (सांसपत्र) – Civic Air Quality Briefing Studio
 
-## Getting Started
+> **Google for Developers PromptWars Hackathon Submission**  
+> AI-driven civic intelligence tool transforming raw, chaotic air quality data into grounded, persona-prioritized municipal interventions and multi-lingual citizen advisories.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 1. Chosen Vertical & Problem Alignment
+
+### Why Air Quality & Civic Governance?
+Air pollution across the Indo-Gangetic Plains and Indian metropolitan corridors (Delhi-NCR, Mumbai, Kolkata, Lucknow, Kanpur) is a chronic public health emergency. Municipal ward officers, Resident Welfare Associations (RWAs), and school administrators receive or collect raw continuous ambient air quality monitoring (CAAQMS) tables from CPCB, SPCB, and low-cost sensor networks.
+
+However, raw monitoring data is routinely plagued by:
+- **Chaotic units**: PM2.5 in $\mu\text{g/m}^3$, PM10 in $\text{mg/m}^3$, $\text{NO}_2$ in $\text{ppb}$.
+- **Data corruption**: Sentinel values (`-999`, `-1`, `9999`), missing fields (`NA`, `--`, null), and stuck sensors (repetitive identical measurements from frozen telemetry).
+- **Date format chaos**: Mixed ISO 8601, Indian `DD/MM/YYYY`, US `MM-DD-YYYY`, and epoch timestamps within the same table.
+- **Cognitive overload**: Ward officers cannot decipher raw tables into enforcement actions (road dust sweeping, garbage burning crackdowns, DG set regulation) before peak morning exposure hours.
+- **Communication barrier**: Citizens and vulnerable populations (children, senior citizens, respiratory patients) need clear, jargon-free guidance in their mother tongue at appropriate reading levels—not numbers alone.
+
+**SaansPatra** bridges this critical last-mile gap:
+1. **Deterministic Cleaning Engine**: Sniffs delimiters, normalizes synonyms and units, flags 10 distinct error reasons, and computes reliability scores per station without wasting LLM tokens.
+2. **CPCB Analytics Engine**: Calculates official Indian National Air Quality Index (AQI) sub-indices via linear interpolation and flags provisional ratings when fewer than 3 pollutants or particulate matter are missing. Generates unique Evidence IDs ($E_1, E_2, \dots$) for complete traceability.
+3. **Structured Gemini Intelligence**: Sends *only* compact aggregated metrics and evidence IDs to `gemini-2.5-flash` using structured JSON output.
+4. **Grounding Validator**: Cross-checks every AI claim, verifying cited evidence refs and confirming that numbers match computed facts. Flags hallucinated claims with an `UNVERIFIED` stamp.
+5. **Persona Engine**: Prioritizes enforcement actions for Ward Officers, residential actions for RWAs, student protective protocols for Schools, and health advisories for Citizens.
+6. **Cycle Comparison (IndexedDB)**: Computes deterministic deltas between monitoring cycles with AI narration of "what changed", carrying over action checklist statuses across cycles.
+7. **Multi-Lingual Citizen Advisory**: Generates localized public health notices across 6 languages (English, Hindi, Marathi, Bengali, Tamil, Telugu) and 3 reading levels (Class-5 Simple, General Citizen, Technical Brief), with one-click WhatsApp sharing and Web Speech API audio.
+
+---
+
+## 2. Architecture
+
+```mermaid
+flowchart TD
+    subgraph Client["Browser Layer (Client-Side)"]
+        Desk["Data Desk\n(Paste / Drag-Drop / 3 Messy Demos)"]
+        UI["3-Pane Responsive Layout\n(Data Desk | Briefing Studio | Evidence Trail)"]
+        IDB[("IndexedDB\n(Browser-Only Cycle Snapshots)")]
+        TTS["Web Speech API\n(Text-to-Speech Read Aloud)"]
+        WACopy["WhatsApp Plain-Text Clipboard Export"]
+    end
+
+    subgraph CleaningEngine["Deterministic Cleaning Engine (Zero LLM)"]
+        Delim["Delimiter Sniffer\n(CSV / TSV / JSON)"]
+        Synonym["Header Synonym Normalizer\n(pm2.5, PM_2.5, coarse_pm...)"]
+        UnitNorm["Unit Normalizer\n(ppb -> ug/m3 @ 25C, mg -> ug)"]
+        DateNorm["Multi-Format Date Parser\n(ISO, DD/MM, MM-DD, Epoch)"]
+        Flagger["10 Reason Flagger\n(MISSING, SENTINEL, SPIKE, STUCK...)"]
+        Quality["Quality & Reliability Scorer"]
+    end
+
+    subgraph AnalyticsEngine["CPCB Analytics Engine (Zero LLM)"]
+        SubIndex["CPCB Sub-Index Interpolation\n(Linear Breakpoints Table)"]
+        WorstPol["Worst Pollutant Principle\n(Overall AQI, Provisional Checks)"]
+        Stats["Per-Station Stats & Trend Regression\n(Mean, Max, Min, StdDev)"]
+        Hotspots["Hotspot Ranking\n(Severity x Duration x Confidence)"]
+        EvidenceGen["Deterministic Evidence Generator\n(E1, E2, E3... linking Row IDs)"]
+    end
+
+    subgraph Server["Next.js Server API Routes (Node.js)"]
+        RateLimit["Per-IP Sliding Window Rate Limiter"]
+        ZodVal["Zod Schema & Size Validator\n(Max 1 MB, 5,000 Rows)"]
+        PromptDef["Prompt Injection Defense\n(Delimiters + System Isolation)"]
+        GroundVal["Grounding Validator\n(Evidence Ref & Number Verifier)"]
+        API_Analyze["/api/analyze"]
+        API_Brief["/api/brief"]
+        API_Translate["/api/translate"]
+        API_Compare["/api/compare"]
+    end
+
+    subgraph Gemini["Google Gemini API (Official @google/genai SDK)"]
+        Flash["gemini-2.5-flash\n(responseMimeType: application/json)"]
+    end
+
+    Desk --> Delim --> Synonym --> UnitNorm --> DateNorm --> Flagger --> Quality
+    Quality --> SubIndex --> WorstPol --> Stats --> Hotspots --> EvidenceGen
+    EvidenceGen --> API_Analyze
+    API_Analyze --> RateLimit --> ZodVal
+    ZodVal --> PromptDef --> Flash
+    Flash --> GroundVal --> UI
+    UI --> IDB
+    IDB --> API_Compare
+    UI --> TTS
+    UI --> WACopy
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 3. How It Works: Step-by-Step
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Step 1: Ingestion & Delimiter Sniffing
+The Data Desk accepts raw pasted text or uploaded files up to 1 MB (~5,000 rows). Delimiter detection counts frequency of `,`, `\t`, `;`, and `|` across initial lines, or automatically detects JSON arrays.
 
-## Learn More
+### Step 2: Deterministic Data Cleaning & Anomaly Flagging
+Without invoking costly LLMs on raw rows:
+1. **Header Normalization**: Fuzzy matches against canonical keys (`pm25`, `pm10`, `no2`, `so2`, `co`, `o3`, `nh3`, `pb`, `station`, `timestamp`).
+2. **Date Disambiguation**: Intelligently parses ISO, `DD/MM/YYYY` (Indian convention), `MM/DD/YYYY` (when day $> 12$), hyphenated dates, and epoch timestamps.
+3. **Unit Conversion**: Normalizes $\text{mg/m}^3$ to $\mu\text{g/m}^3$; converts $\text{ppb}$ to $\mu\text{g/m}^3$ using gas molar mass at 25°C, 1 atm; keeps $\text{CO}$ in $\text{mg/m}^3$.
+4. **Stable Row IDs**: Generates deterministic FNV-1a hash IDs (`R1`, `R2`...) for cross-referencing.
+5. **10 Anomaly Reason Codes**:
+   - `MISSING`: Null, undefined, or empty readings.
+   - `SENTINEL`: Sensor error codes (`-999`, `-1`, `9999`).
+   - `NEGATIVE`: Negative concentrations.
+   - `OUT_OF_RANGE`: Exceeds physical thresholds ($\text{PM}_{2.5} > 1000$, $\text{CO} > 100$).
+   - `STUCK_SENSOR`: $\ge 5$ consecutive identical measurements.
+   - `SPIKE`: Sudden $> 3\times$ deviation from rolling median.
+   - `DUPLICATE`: Identical station and timestamp records.
+   - `UNIT_AMBIGUOUS`: Unclear or conflicting unit annotations.
+   - `TIME_GAP`: Telemetry gap exceeding 6 hours.
+   - `BAD_DATE`: Unparseable or future timestamps.
+6. **Data Quality Report**: Calculates a reliability percentage per monitoring station.
 
-To learn more about Next.js, take a look at the following resources:
+### Step 3: CPCB India AQI Calculation
+Implements the official CPCB linear segmented formula:
+$$I_p = \left[ \frac{I_{HI} - I_{LO}}{B_{HI} - B_{LO}} \right] \times (C_p - B_{LO}) + I_{LO}$$
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Precautionary Principle**:
+- Station AQI equals the maximum of all pollutant sub-indices ($\max(I_p)$).
+- **Provisional Guard**: If valid readings are present for fewer than 3 pollutants or missing particulate matter ($\text{PM}_{2.5}$ or $\text{PM}_{10}$), the AQI is explicitly stamped **`PROVISIONAL`** with low confidence.
+- Each finding links to deterministic evidence IDs ($E_1, E_2 \dots$).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Step 4: Token-Efficient Gemini Generation
+Raw data rows are **never** transmitted to the LLM. Only compact summary statistics (station averages, max, min, regression trends, hotspot scores, evidence IDs) are sent inside hardened boundaries.
 
-## Deploy on Vercel
+Structured output is enforced via `@google/genai` with `responseMimeType: "application/json"` and `responseSchema`:
+- `findings`: claim, severity, confidence, evidenceRefs
+- `hotspots`: prioritized station list
+- `actions`: priority (P1-P3), owner, effort, timeframe, rationale, evidenceRefs
+- `dataGaps`: unmonitored pollutants or sensor reliability concerns
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Step 5: Grounding Validation Engine
+Immediately upon receiving the model's response, the Grounding Validator performs two strict checks:
+1. **Evidence Reference Check**: Verifies that every `evidenceRef` actually exists in the deterministic evidence registry.
+2. **Numerical Cross-Check**: Extracts all numbers from claim strings and confirms each corresponds to an actual calculated metric (mean, max, min, count, or AQI).
+Failing claims are tagged with an **`UNVERIFIED`** stamp, and a prominent badge displays `Verified N of M claims`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Step 6: Persona Filtering & Action Directives
+The same environmental data generates distinct prioritized actions:
+- **Ward Officer**: Mechanical sweepers, water sprinklers/mist cannons along road dust corridors, flying squad patrols against open waste burning, construction site dust audits.
+- **Housing Society / RWA**: Diesel generator (DG) set non-emergency restrictions, security guard heating provisions to stop leaf/plastic burning, common area air filter operation.
+- **School Administration**: Morning assembly cancellations, outdoor sports bans, indoor physical activity, commute-hour mask guidance, revised school hours.
+- **Citizen**: Restricting early morning jogging during thermal inversion, indoor ventilation during sunny afternoons, high-risk family care.
+
+### Step 7: Historical Cycle Comparison & Action Carry-Over
+All monitoring snapshots are stored locally in the browser's **IndexedDB** (`saanspatra-db`), keeping user data entirely private.
+1. Computes deterministic delta ($\Delta \text{AQI}$) per station and identifies new or resolved hotspots.
+2. Carries over action directives with checkable completion status across briefing cycles.
+3. Requests a concise Gemini narration summarizing positive developments and emerging concerns.
+
+### Step 8: Multi-Lingual Citizen Advisories & Accessibility
+- **6 Indian Languages**: English, हिन्दी (Hindi), मराठी (Marathi), বাংলা (Bengali), தமிழ் (Tamil), తెలుగు (Telugu).
+- **3 Reading Levels**: Class-5 Simple (short sentences, zero jargon), General Citizen, Technical Brief ($\mu\text{g/m}^3$ and breakpoints).
+- **Special Care Cards**: Dedicated guidance for children, seniors (60+), and respiratory/cardiac patients.
+- **One-Click WhatsApp Copy**: Formatted plain-text clipboard copy for RWA and ward group distribution.
+- **Read Aloud**: Browser-native Web Speech API (`window.speechSynthesis`) text-to-speech with Indian accent voice support.
+- **Formal Print CSS**: Clean black-and-white print output for physical municipal gazettes.
+
+---
+
+## 4. Gemini Usage & Prompt Defense
+
+| Capability | Model | Schema Constraint | Token Optimization | Fallback Behavior |
+|---|---|---|---|---|
+| **Civic Briefing** | `gemini-2.5-flash` | `GEMINI_BRIEFING_SCHEMA` | Aggregated stats only (~600 tokens) | Deterministic template brief |
+| **Grounding** | Code-level | Zod validation | 0 tokens (server-side) | Stamped UNVERIFIED |
+| **Translation** | `gemini-2.5-flash` | `GEMINI_TRANSLATION_SCHEMA` | Parallel calls per language | Static native templates |
+| **Cycle Comparison**| `gemini-2.5-flash` | `GEMINI_COMPARISON_SCHEMA` | Structured diff only (~300 tokens) | Rule-based summary |
+| **Ambiguous Columns**| `gemini-2.5-flash` | `GEMINI_COLUMN_MAPPING_SCHEMA`| Unmapped headers only | Ignored safely |
+
+### Prompt Injection Defense
+1. **Data Boundary Delimiters**: All untrusted data is wrapped in `<<<CIVIC_AIR_QUALITY_DATA>>>` and `<<<END_CIVIC_AIR_QUALITY_DATA>>>`.
+2. **Delimiter Disarming**: Embedded closing delimiter strings inside input are escaped before prompt interpolation.
+3. **System Instruction Guard**: Explicit instruction commanding the model to treat everything inside delimiters as passive measurement data and ignore any embedded override instructions.
+4. **Structured JSON Output**: Enforcing `responseMimeType: "application/json"` prevents prompt leaking and conversational hijacking.
+
+---
+
+## 5. Security Measures
+
+- **Zero Client-Side API Keys**: `GEMINI_API_KEY` is strictly accessed server-side via Node.js environment variables.
+- **Strict Input Validation**: Every API route validates requests using Zod schemas; rejects payloads $> 1\text{ MB}$.
+- **Per-IP Rate Limiting**: In-memory sliding window rate limiter protects endpoints from denial-of-service (60 requests/minute).
+- **CSV Formula Injection Sanitization**: Prepends `'` to values starting with `=`, `+`, `-`, `@`, `\t`, `\r` before file exports.
+- **Control Character Stripping**: Strips ASCII control bytes ($0\text{x}00$–$0\text{x}1\text{F}$) while preserving valid whitespace.
+- **No `dangerouslySetInnerHTML`**: All UI rendering utilizes safe React text escaping.
+- **Content Security Policy (CSP)**: Strict headers configured in `next.config.ts`:
+  - `default-src 'self'`
+  - `frame-ancestors 'none'`
+  - `X-Frame-Options: DENY`
+  - `X-Content-Type-Options: nosniff`
+  - `Referrer-Policy: strict-origin-when-cross-origin`
+  - `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+- **No PII Logging**: Server routes log generic error messages without logging request bodies or stack traces.
+
+---
+
+## 6. Accessibility (WCAG 2.2 AA)
+
+- **Semantic Landmarks**: Clean `<header>`, `<main id="main-content">`, `<nav>`, `<aside>`, `<footer>`, `<fieldset>`, and `<caption>` elements.
+- **Skip to Main Content**: Keyboard-focusable `.skip-link` allows immediate jump to the main desk.
+- **Never Color Alone**: All AQI badges and charts combine:
+  1. Haze ramp background color
+  2. Distinct SVG pattern fills (diagonal lines, dots, crosshatch)
+  3. High-contrast text labels showing category name and numerical value
+- **Accessible Chart Alternatives**: Every bar visual includes a toggle to switch to a semantic HTML `<table>`.
+- **Screen Reader Support**: Dynamic updates utilize `aria-live="polite"` regions; tab navigation follows ARIA tablist patterns with arrow key navigation.
+- **Multi-Lingual Semantics**: Every translated advisory block sets the exact HTML `lang` attribute (`lang="hi"`, `lang="mr"`, `lang="bn"`, etc.).
+- **Themes & Contrast**:
+  - Gazette Default: High-contrast paper (`#F5F0E6`) and ink (`#14213D`)
+  - High Contrast: Pure `#FFFFFF` background, solid black `#000000` text, $3\text{px}$ borders
+  - Night Shift: Deep blue-gray (`#1A1F2E`) with low eye strain
+  - Text Size Scaler: One-click A/A+ control scaling base typography
+- **Target Sizes**: All buttons, tabs, and toggles enforce a minimum $44\text{px} \times 44\text{px}$ touch target.
+- **Reduced Motion**: Respects `prefers-reduced-motion: reduce` by disabling transitions and animations.
+
+---
+
+## 7. CPCB Health Breakpoints Reference
+
+Official CPCB National Air Quality Index (2014) health breakpoints:
+
+| Category | AQI Range | $\text{PM}_{2.5}$ ($\mu\text{g/m}^3$, 24hr) | $\text{PM}_{10}$ ($\mu\text{g/m}^3$, 24hr) | $\text{NO}_2$ ($\mu\text{g/m}^3$, 24hr) | $\text{SO}_2$ ($\mu\text{g/m}^3$, 24hr) | $\text{CO}$ ($\text{mg/m}^3$, 8hr) | $\text{O}_3$ ($\mu\text{g/m}^3$, 8hr) |
+|---|---|---|---|---|---|---|---|
+| **Good** | 0 – 50 | 0 – 30 | 0 – 50 | 0 – 40 | 0 – 40 | 0 – 1.0 | 0 – 50 |
+| **Satisfactory** | 51 – 100 | 31 – 60 | 51 – 100 | 41 – 80 | 41 – 80 | 1.1 – 2.0 | 51 – 100 |
+| **Moderate** | 101 – 200 | 61 – 90 | 101 – 250 | 81 – 180 | 81 – 380 | 2.1 – 10.0 | 101 – 168 |
+| **Poor** | 201 – 300 | 91 – 120 | 251 – 350 | 181 – 280 | 381 – 800 | 10.1 – 17.0 | 169 – 208 |
+| **Very Poor** | 301 – 400 | 121 – 250 | 351 – 430 | 281 – 400 | 801 – 1600 | 17.1 – 34.0 | 209 – 748 |
+| **Severe** | 401 – 500 | 251+ | 431+ | 401+ | 1601+ | 34.1+ | 749+ |
+
+---
+
+## 8. Assumptions & Limitations
+
+1. **CPCB Breakpoints**: Calculations strictly follow the CPCB 2014 notification.
+2. **Gas Conversion Temperature**: Conversion from $\text{ppb}$ to $\mu\text{g/m}^3$ assumes standard temperature and pressure (25°C, 1 atm):
+   $$\text{Conc} (\mu\text{g/m}^3) = \frac{\text{ppb} \times \text{Molar Mass}}{24.45}$$
+3. **CO Units**: Carbon Monoxide is reported in $\text{mg/m}^3$ as per CPCB standards; conversion from $\text{ppm}$ applies $1 \text{ ppm} = 1.145 \text{ mg/m}^3$.
+4. **Offline Fallback**: When `GEMINI_API_KEY` is not present, deterministic algorithmic templates generate briefings and advisories so the application never breaks.
+5. **Client-Side Persistence**: Cycle comparison utilizes IndexedDB in the user's browser; no historical monitoring data is saved on the server.
+
+---
+
+## 9. Setup & Development
+
+### Prerequisites
+- Node.js 20+
+- pnpm 10+ (`npm install -g pnpm`)
+
+### Installation
+```bash
+# Clone the repository
+git clone https://github.com/your-username/saanspatra.git
+cd saanspatra
+
+# Install dependencies
+pnpm install
+
+# Copy environment template
+cp .env.example .env.local
+```
+
+### Environment Configuration
+Edit `.env.local`:
+```env
+# Google Gemini API key from AI Studio
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Fast, stable Gemini model
+GEMINI_MODEL=gemini-2.5-flash
+```
+*(Note: If `GEMINI_API_KEY` is omitted, SaansPatra automatically runs in deterministic fallback mode with zero API calls).*
+
+### Development Server
+```bash
+pnpm dev
+# Open http://localhost:3000
+```
+
+### Production Build & Verification
+```bash
+# Typecheck
+pnpm typecheck
+
+# Lint (zero warnings/errors)
+pnpm lint
+
+# Unit & API tests (66 tests)
+pnpm test
+
+# Production build
+pnpm build
+
+# Start production server
+pnpm start
+```
+
+### Docker Deployment (Cloud Run Compatible)
+```bash
+# Build multi-stage container
+docker build -t saanspatra .
+
+# Run container
+docker run -p 3000:3000 -e GEMINI_API_KEY="your_api_key" saanspatra
+```
+
+---
+
+## 10. Demo Walkthrough
+
+1. **Launch Studio**: Open `http://localhost:3000`. Observe the newspaper gazette layout:
+   - Left: **Pane 1 (Data Desk)**
+   - Center: **Pane 2 (Briefing & Advisory Studio)**
+   - Right: **Pane 3 (Evidence Trail)**
+2. **Load Built-in Messy Data**: Click **Load Demo Dataset...** and choose **1. Delhi NCR Multi-Station**.
+   - Notice mixed units ($\text{PM}_{10}$ in $\text{mg/m}^3$, $\text{NO}_2$ in $\text{ppb}$), missing readings, and `-999` sentinels.
+   - The Data Quality Audit displays overall reliability and flags anomalies.
+3. **Review Grounded Briefing**:
+   - The executive brief displays the regional AQI and dominant pollutant.
+   - Look at the **VERIFIED** stamp badge and verification banner (`Verified N of N claims`).
+   - Click on any evidence badge (e.g. `E1`, `E2`) to highlight the supporting record in Pane 3.
+4. **Switch Target Persona**:
+   - Toggle to **School Administration**: Notice action directives shift to sports cancellations and morning assembly protocols.
+   - Toggle to **Housing Society / RWA**: Notice action directives shift to DG set bans and garbage burning prevention.
+   - Mark an action as completed via the checkbox.
+5. **Switch to Citizen Advisory**:
+   - Click the **Citizen Advisory** sub-tab.
+   - Switch between **Class-5 Simple**, **General Citizen**, and **Technical Brief**.
+   - Switch language to **हिन्दी (Hindi)** or **मराठी (Marathi)**.
+   - Click **Read Aloud** to test text-to-speech audio.
+   - Click **Copy for WhatsApp** to get a clean text summary.
+6. **Compare Monitoring Cycles**:
+   - In the Data Desk, choose **2. Mumbai Coastal Stations**.
+   - Click **Compare Cycles** in the Briefing Studio.
+   - View the deterministic delta ($\Delta \text{AQI}$ per station), new/resolved hotspots, carried-over actions, and Gemini's executive narration of "what changed".
+7. **Print Formal Brief**:
+   - Click **Print Note** to preview the clean black-and-white print stylesheet.
+
+---
+
+## 11. Testing & CI Pipeline
+
+SaansPatra features a comprehensive test suite across unit, integration, and E2E layers:
+- **Unit Tests (Vitest)**: Delimiter detection, synonym normalization, unit conversion, 10 flag reason codes, date parser, formula injection sanitizer, CPCB sub-index breakpoints, per-station regression trends, hotspot ranking, evidence generation, deterministic diff, grounding validator, and sliding window rate limiter.
+- **API Tests (Vitest)**: `/api/analyze`, `/api/brief`, `/api/translate`, `/api/compare`.
+- **E2E Tests (Playwright)**: End-to-end user journey from demo loading to persona switching to advisory generation.
+- **Accessibility Tests (axe-core)**: Automated WCAG 2.2 AA audits verifying landmarks, color contrast, ARIA states, and keyboard accessibility.
+- **GitHub Actions CI**: Automated workflow executing Typecheck $\rightarrow$ Lint $\rightarrow$ Vitest $\rightarrow$ Build on every commit.
+
+```bash
+# Run all Vitest suites
+pnpm test
+
+# Run Vitest with coverage report
+pnpm test:coverage
+
+# Run Playwright E2E and Axe audits
+pnpm test:e2e
+```
+
+---
+
+## 12. License
+Apache 2.0. Built for Google for Developers PromptWars.

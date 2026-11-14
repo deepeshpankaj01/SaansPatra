@@ -1,4 +1,4 @@
-import { BriefingResponse, BriefingFinding } from '../gemini/schemas';
+import { BriefingResponse } from '../gemini/schemas';
 import { AnalyticsResult, Evidence } from '../analytics/types';
 
 export interface FindingValidation {

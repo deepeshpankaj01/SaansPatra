@@ -28,16 +28,16 @@ jobs:
         run: pnpm install
 
       - name: Type check
-        run: tsc --noEmit
+        run: pnpm typecheck
 
       - name: Lint
-        run: pnpm exec eslint .
+        run: pnpm lint
 
       - name: Unit tests
-        run: pnpm exec vitest run
+        run: pnpm test
 
       - name: Build
-        run: pnpm exec next build
+        run: pnpm build
 
       - name: Audit
         run: npm audit --audit-level=high
