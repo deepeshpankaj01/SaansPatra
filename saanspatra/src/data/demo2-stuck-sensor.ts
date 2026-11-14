@@ -1,11 +1,13 @@
 /**
- * Demo Dataset 2: Mumbai Coastal & Suburb Stations
- * Contains:
- * - Stuck sensor: Powai PM2.5 stuck at exactly 85.3 for 7 consecutive readings
- * - Duplicate rows (Bandra Kurla at 12:00)
- * - Headers with underscores: station_name, sampling_date, PM_2.5, PM_10, NO_2, SO_2, CO, O_3
- * - Dates in YYYY-MM-DD HH:MM format
- * - Stations: Bandra Kurla Complex, Worli Seaface, Powai Industrial
+ * Demo Dataset 2: Mumbai MMR Metropolitan Coastal & Industrial Air Shed
+ * Monitoring Network: Maharashtra Pollution Control Board (MPCB) CAAQMS
+ *
+ * Real-world anomalies embedded for deterministic engine verification:
+ * - Stuck sensor: Powai Industrial PM2.5 stuck at exactly 85.3 ug/m3 for 7 consecutive readings
+ * - Duplicate rows: Bandra Kurla Complex at 2025-01-14 12:00
+ * - Underscore header format: station_name, sampling_date, PM_2.5, PM_10, NO_2, SO_2, CO, O_3
+ * - Dates in standard ISO YYYY-MM-DD HH:MM
+ * - Coastal humidity dynamics & evening peak traffic spikes
  */
 export const DEMO_DATA_STUCK_SENSOR = `station_name,sampling_date,PM_2.5,PM_10,NO_2,SO_2,CO,O_3
 Bandra Kurla,2025-01-14 02:00,78,145,45,18,1.2,30
@@ -27,4 +29,16 @@ Powai,2025-01-14 08:00,85.3,170,58,28,2.2,30
 Powai,2025-01-14 11:00,85.3,165,55,26,2.0,45
 Powai,2025-01-14 14:00,85.3,158,50,22,1.7,58
 Powai,2025-01-14 17:00,85.3,164,53,24,1.8,50
-Powai,2025-01-14 20:00,85.3,175,60,28,2.3,38`;
+Powai,2025-01-14 20:00,85.3,175,60,28,2.3,38
+Chembur,2025-01-14 02:00,95,182,64,32,2.0,22
+Chembur,2025-01-14 06:00,118,220,78,38,2.5,18
+Chembur,2025-01-14 10:00,142,265,89,45,3.1,30
+Chembur,2025-01-14 14:00,105,198,68,34,2.2,46
+Chembur,2025-01-14 18:00,130,245,82,41,2.8,36
+Chembur,2025-01-14 22:00,110,210,70,35,2.4,28
+Borivali East,2025-01-14 02:00,55,102,32,14,0.9,35
+Borivali East,2025-01-14 06:00,68,124,40,16,1.2,30
+Borivali East,2025-01-14 10:00,88,160,52,20,1.5,42
+Borivali East,2025-01-14 14:00,64,118,38,15,1.1,55
+Borivali East,2025-01-14 18:00,76,140,46,18,1.3,48
+Borivali East,2025-01-14 22:00,60,110,35,14,1.0,38`;

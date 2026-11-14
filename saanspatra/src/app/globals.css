@@ -1,32 +1,78 @@
 @import "tailwindcss";
 
-/* ── Design Tokens ─────────────────────────────────────────────── */
+/* ── Atmospheric Civic Intelligence Design Tokens ───────────────── */
 :root {
-  /* Core palette */
-  --color-paper: #F5F0E6;
-  --color-ink: #14213D;
-  --color-marigold: #F2A900;
-  --color-brick: #B23A2E;
+  /* Core palette - Light Theme: Editorial Parchment */
+  --color-paper: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-surface-subtle: #F1F5F9;
+  --color-ink: #0F172A;
+  --color-ink-muted: #475569;
+  --color-border: #CBD5E1;
+  --color-border-subtle: #E2E8F0;
+  --color-marigold: #F59E0B;
+  --color-brick: #DC2626;
 
-  /* AQI haze ramp */
-  --color-aqi-good: #A8C686;
-  --color-aqi-satisfactory: #D4C78F;
-  --color-aqi-moderate: #E8A849;
-  --color-aqi-poor: #D97B2B;
-  --color-aqi-verypoor: #B23A2E;
-  --color-aqi-severe: #3D1B2F;
+  /* Official CPCB National Air Quality Index (NAQI) 6-Tier Color Tokens */
+  --color-aqi-good: #10B981;
+  --color-aqi-satisfactory: #84CC16;
+  --color-aqi-moderate: #EAB308;
+  --color-aqi-poor: #F97316;
+  --color-aqi-verypoor: #EF4444;
+  --color-aqi-severe: #7F1D1D;
 
-  /* Typography */
-  --font-heading: 'Fraunces', serif;
-  --font-body: 'IBM Plex Sans', sans-serif;
-  --font-data: 'IBM Plex Mono', monospace;
+  /* Typography Stacks */
+  --font-serif: 'Playfair Display', Georgia, Cambria, 'Times New Roman', serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'IBM Plex Mono', Menlo, Consolas, monospace;
+
+  /* Ambient Glassmorphic & Elevation */
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --glass-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+}
+
+/* ── Dark Theme: Atmospheric Command ────────────────────────────── */
+[data-theme='dark'],
+[data-theme='night-shift'] {
+  --color-paper: #090D16;
+  --color-surface: #0F172A;
+  --color-surface-subtle: #1E293B;
+  --color-ink: #F8FAFC;
+  --color-ink-muted: #94A3B8;
+  --color-border: #334155;
+  --color-border-subtle: #1E293B;
+  --color-marigold: #FBBF24;
+  --color-brick: #F87171;
+
+  --glass-bg: rgba(15, 23, 42, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.4);
+}
+
+/* ── High Contrast Mode (WCAG AAA) ──────────────────────────────── */
+[data-theme='high-contrast'] {
+  --color-paper: #FFFFFF;
+  --color-surface: #FFFFFF;
+  --color-surface-subtle: #F4F4F5;
+  --color-ink: #000000;
+  --color-ink-muted: #18181B;
+  --color-border: #000000;
+  --color-border-subtle: #27272A;
+  --color-marigold: #B45309;
+  --color-brick: #991B1B;
+
+  --glass-bg: #FFFFFF;
+  --glass-border: #000000;
+  --glass-shadow: none;
 }
 
 /* ── Base Styles ───────────────────────────────────────────────── */
 html {
   background-color: var(--color-paper);
   color: var(--color-ink);
-  font-family: var(--font-body);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
 }
 
 body {
@@ -39,228 +85,227 @@ body {
   top: -100%;
   left: 1rem;
   z-index: 9999;
-  padding: 0.5rem 1rem;
+  padding: 0.625rem 1.25rem;
   background: var(--color-ink);
   color: var(--color-paper);
-  font-weight: 600;
-  border-radius: 0 0 0.25rem 0.25rem;
-  transition: top 0.15s ease;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-radius: 0 0 0.375rem 0.375rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: top 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .skip-link:focus {
   top: 0;
+  outline: 3px solid var(--color-marigold);
+  outline-offset: 2px;
 }
 
-/* ── Haze Strip ────────────────────────────────────────────────── */
+/* ── Atmospheric Telemetry Ribbon (Haze Strip) ─────────────────── */
 .haze-strip {
-  height: 0.5rem;
+  height: 0.375rem;
   width: 100%;
   background: linear-gradient(
-    to right,
-    var(--color-aqi-good),
-    var(--color-aqi-satisfactory),
-    var(--color-aqi-moderate),
-    var(--color-aqi-poor),
-    var(--color-aqi-verypoor),
-    var(--color-aqi-severe)
+    90deg,
+    var(--color-aqi-good) 0%,
+    var(--color-aqi-satisfactory) 20%,
+    var(--color-aqi-moderate) 40%,
+    var(--color-aqi-poor) 60%,
+    var(--color-aqi-verypoor) 80%,
+    var(--color-aqi-severe) 100%
   );
+  position: relative;
+  overflow: hidden;
 }
 
-/* ── Stamp Badges ──────────────────────────────────────────────── */
+.haze-strip-pulse::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.45),
+    transparent
+  );
+  animation: telemetry-sweep 3s ease-in-out infinite;
+}
+
+@keyframes telemetry-sweep {
+  0% { left: -50%; }
+  100% { left: 150%; }
+}
+
+/* ── Stamp Badges (Official Gazette Seal) ───────────────────────── */
 .stamp-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.75rem;
-  font-family: var(--font-data);
-  font-size: 0.75rem;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-width: 2px;
+  letter-spacing: 0.08em;
+  border-width: 1.5px;
   border-style: solid;
   border-radius: 0.25rem;
+  transition: transform 0.15s ease;
 }
 
 .stamp-verified {
-  border-color: var(--color-marigold);
-  color: var(--color-marigold);
+  border-color: var(--color-aqi-good);
+  color: var(--color-aqi-good);
+  background-color: rgba(16, 185, 129, 0.08);
 }
 
 .stamp-unverified {
   border-color: var(--color-brick);
   color: var(--color-brick);
+  background-color: rgba(220, 38, 38, 0.08);
 }
 
 .stamp-provisional {
   border-color: var(--color-marigold);
   border-style: dashed;
-  color: var(--color-ink);
+  color: var(--color-marigold);
+  background-color: rgba(245, 158, 11, 0.08);
 }
 
-/* ── AQI Pattern Classes ──────────────────────────────────────── */
+/* ── AQI Pattern Overlays (Never Color Alone) ─────────────────── */
 .aqi-pattern-good {
   background-image: repeating-linear-gradient(
     45deg,
     transparent,
     transparent 4px,
-    var(--color-aqi-good) 4px,
-    var(--color-aqi-good) 5px
+    rgba(255, 255, 255, 0.25) 4px,
+    rgba(255, 255, 255, 0.25) 5px
   );
 }
 
 .aqi-pattern-satisfactory {
   background-image: repeating-linear-gradient(
-    45deg,
+    -45deg,
     transparent,
     transparent 6px,
-    var(--color-aqi-satisfactory) 6px,
-    var(--color-aqi-satisfactory) 7px
+    rgba(0, 0, 0, 0.1) 6px,
+    rgba(0, 0, 0, 0.1) 7px
   );
 }
 
 .aqi-pattern-moderate {
   background-image: radial-gradient(
     circle,
-    var(--color-aqi-moderate) 1px,
-    transparent 1px
+    rgba(0, 0, 0, 0.18) 1.2px,
+    transparent 1.2px
   );
-  background-size: 8px 8px;
+  background-size: 7px 7px;
 }
 
 .aqi-pattern-poor {
-  background-image:
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 4px,
-      var(--color-aqi-poor) 4px,
-      var(--color-aqi-poor) 5px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 4px,
-      var(--color-aqi-poor) 4px,
-      var(--color-aqi-poor) 5px
-    );
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 4px,
+    rgba(255, 255, 255, 0.2) 4px,
+    rgba(255, 255, 255, 0.2) 5px
+  );
 }
 
 .aqi-pattern-verypoor {
-  background-image:
-    repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 3px,
-      var(--color-aqi-verypoor) 3px,
-      var(--color-aqi-verypoor) 4px
-    ),
-    repeating-linear-gradient(
-      -45deg,
-      transparent,
-      transparent 3px,
-      var(--color-aqi-verypoor) 3px,
-      var(--color-aqi-verypoor) 4px
-    );
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 3px,
+    rgba(255, 255, 255, 0.25) 3px,
+    rgba(255, 255, 255, 0.25) 4px
+  ),
+  repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 3px,
+    rgba(255, 255, 255, 0.25) 3px,
+    rgba(255, 255, 255, 0.25) 4px
+  );
 }
 
 .aqi-pattern-severe {
-  background-image:
-    repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 2px,
-      var(--color-aqi-severe) 2px,
-      var(--color-aqi-severe) 3px
-    ),
-    repeating-linear-gradient(
-      -45deg,
-      transparent,
-      transparent 2px,
-      var(--color-aqi-severe) 2px,
-      var(--color-aqi-severe) 3px
-    );
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, 0.3) 2px,
+    rgba(255, 255, 255, 0.3) 3px
+  ),
+  repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, 0.3) 2px,
+    rgba(255, 255, 255, 0.3) 3px
+  );
 }
 
-/* ── Focus Visible (keyboard nav) ─────────────────────────────── */
+/* ── Keyboard Accessibility Focus Visible ──────────────────────── */
 :focus-visible {
   outline: 2px solid var(--color-marigold);
   outline-offset: 2px;
 }
 
-/* ── High Contrast Theme ──────────────────────────────────────── */
-[data-theme='high-contrast'] {
-  --color-paper: #FFFFFF;
-  --color-ink: #000000;
-  background-color: var(--color-paper);
-  color: var(--color-ink);
-}
-
-[data-theme='high-contrast'] .stamp-badge {
-  border-width: 3px;
-}
-
-[data-theme='high-contrast'] :focus-visible {
-  outline-width: 3px;
-  outline-color: #000000;
-}
-
-/* ── Night Shift Theme ────────────────────────────────────────── */
-[data-theme='night-shift'] {
-  --color-paper: #1A1F2E;
-  --color-ink: #E0E0E0;
-  background-color: var(--color-paper);
-  color: var(--color-ink);
-}
-
-/* ── Text Size Scaling ────────────────────────────────────────── */
+/* ── Typography Scale Overrides ─────────────────────────────────── */
 [data-text-size='large'] {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
 }
 
-/* ── Reduced Motion ───────────────────────────────────────────── */
+[data-text-size='large'] h1 { font-size: 2.25rem !important; }
+[data-text-size='large'] h2 { font-size: 1.625rem !important; }
+[data-text-size='large'] p,
+[data-text-size='large'] label,
+[data-text-size='large'] button { font-size: 1.0625rem !important; }
+
+/* ── Reduced Motion (WCAG 2.2 AA) ──────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
+    animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
 }
 
-/* ── Print Styles ─────────────────────────────────────────────── */
+/* ── Print Stylesheet (Formal Policy Dossier) ──────────────────── */
 @media print {
   nav,
   .skip-link,
   .haze-strip,
   button,
-  [role='navigation'] {
+  [role='navigation'],
+  header,
+  footer {
     display: none !important;
   }
 
   body {
-    background: #FFFFFF;
-    color: #000000;
-    font-size: 12pt;
-    line-height: 1.5;
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    font-size: 11pt;
+    line-height: 1.45;
   }
 
   main {
-    width: 100%;
-    max-width: 100%;
-    margin: 0;
-    padding: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
-  a[href]::after {
-    content: ' (' attr(href) ')';
-    font-size: 0.85em;
-    color: #555;
-  }
-
-  .stamp-badge {
-    border-color: #000 !important;
-    color: #000 !important;
+  .print-page-break {
+    page-break-before: always;
   }
 }

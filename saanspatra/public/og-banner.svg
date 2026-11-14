@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090D16" />
+      <stop offset="100%" stop-color="#14213D" />
+    </linearGradient>
+    <linearGradient id="haze-band" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="20%" stop-color="#84CC16" />
+      <stop offset="40%" stop-color="#EAB308" />
+      <stop offset="60%" stop-color="#F97316" />
+      <stop offset="80%" stop-color="#EF4444" />
+      <stop offset="100%" stop-color="#7F1D1D" />
+    </linearGradient>
+  </defs>
+
+  <!-- Deep Atmospheric Background -->
+  <rect width="1200" height="630" fill="url(#bg-grad)" />
+
+  <!-- Atmospheric Haze Strip Header -->
+  <rect x="0" y="0" width="1200" height="10" fill="url(#haze-band)" />
+
+  <!-- Grid overlay -->
+  <g opacity="0.08" stroke="#F5F0E6" stroke-width="1">
+    <line x1="100" y1="0" x2="100" y2="630" />
+    <line x1="300" y1="0" x2="300" y2="630" />
+    <line x1="600" y1="0" x2="600" y2="630" />
+    <line x1="900" y1="0" x2="900" y2="630" />
+    <line x1="1100" y1="0" x2="1100" y2="630" />
+    <line x1="0" y1="150" x2="1200" y2="150" />
+    <line x1="0" y1="315" x2="1200" y2="315" />
+    <line x1="0" y1="480" x2="1200" y2="480" />
+  </g>
+
+  <!-- Badge / Emblem -->
+  <g transform="translate(100, 100)">
+    <circle cx="32" cy="32" r="30" stroke="url(#haze-band)" stroke-width="3" fill="#14213D" />
+    <path d="M18 36 C22 28, 27 28, 32 32 C37 36, 42 36, 46 28" stroke="#F5F0E6" stroke-width="3" stroke-linecap="round" fill="none" />
+    <circle cx="32" cy="20" r="3" fill="#F2A900" />
+  </g>
+
+  <text x="180" y="142" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="900" fill="#F2A900" letter-spacing="4">SAANSPATRA • सांसपत्र</text>
+  <text x="180" y="172" font-family="monospace" font-size="14" fill="#A8C686" letter-spacing="2">GOVERNMENT OF INDIA CPCB NAQI COMPLIANT • CIVIC INTELLIGENCE STUDIO</text>
+
+  <!-- Title & Subtitle -->
+  <text x="100" y="270" font-family="Georgia, serif" font-size="52" font-weight="900" fill="#F8FAFC">Civic Air Quality Briefing Studio</text>
+  <text x="100" y="325" font-family="system-ui, -apple-system, sans-serif" font-size="22" fill="#E2E8F0" opacity="0.9">Deterministic Telemetry Cleansing • Grounded Gemini Policy Directives • Multi-Lingual Citizen Broadcast</text>
+
+  <!-- Feature Pills -->
+  <g transform="translate(100, 390)">
+    <rect x="0" y="0" width="230" height="50" rx="6" fill="#1E293B" stroke="#334155" />
+    <text x="20" y="32" font-family="monospace" font-size="14" font-weight="700" fill="#10B981">[ZERO-LLM CLEANING]</text>
+
+    <rect x="250" y="0" width="220" height="50" rx="6" fill="#1E293B" stroke="#334155" />
+    <text x="270" y="32" font-family="monospace" font-size="14" font-weight="700" fill="#EAB308">[CPCB NAQI INTERPOLATION]</text>
+
+    <rect x="490" y="0" width="240" height="50" rx="6" fill="#1E293B" stroke="#334155" />
+    <text x="510" y="32" font-family="monospace" font-size="14" font-weight="700" fill="#F2A900">[TRACEABLE GROUNDING]</text>
+
+    <rect x="750" y="0" width="230" height="50" rx="6" fill="#1E293B" stroke="#334155" />
+    <text x="770" y="32" font-family="monospace" font-size="14" font-weight="700" fill="#38BDF8">[6 INDIC LANGUAGES]</text>
+  </g>
+
+  <!-- Footer Tagline -->
+  <text x="100" y="540" font-family="monospace" font-size="14" fill="#94A3B8">Built for Google for Developers PromptWars • Powered by gemini-2.5-flash &amp; Official @google/genai SDK</text>
+</svg>

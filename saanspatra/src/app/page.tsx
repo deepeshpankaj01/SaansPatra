@@ -279,6 +279,9 @@ export default function HomePage() {
   return (
     <AppShell
       hazeValues={hazeValues}
+      datasetLabel={activeDatasetLabel}
+      rowCount={cleanedRows.length}
+      overallReliability={qualityReport?.overallReliability}
       dataDesk={
         <div className="space-y-4">
           {errorMessage && (

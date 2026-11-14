@@ -114,12 +114,12 @@ export function getCategory(aqi: number): AQICategory {
  * pale sage, sand, amber, burnt orange, brick, aubergine-black
  */
 export const AQI_COLORS: Record<AQICategory, string> = {
-  Good: '#A8C686',
-  Satisfactory: '#D4C78F',
-  Moderate: '#E8A849',
-  Poor: '#D97B2B',
-  'Very Poor': '#B23A2E',
-  Severe: '#3D1B2F',
+  Good: '#10B981',
+  Satisfactory: '#84CC16',
+  Moderate: '#EAB308',
+  Poor: '#F97316',
+  'Very Poor': '#EF4444',
+  Severe: '#7F1D1D',
 };
 
 export const AQI_TEXT_COLORS: Record<AQICategory, string> = {

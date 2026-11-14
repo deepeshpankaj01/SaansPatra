@@ -18,12 +18,17 @@ export function PasteArea({ onProcess, disabled }: PasteAreaProps) {
 
   return (
     <div className="w-full space-y-2">
-      <label
-        htmlFor="paste-textarea"
-        className="block text-xs font-mono font-bold uppercase tracking-wider text-[var(--color-ink)]"
-      >
-        Or paste raw table data
-      </label>
+      <div className="flex items-center justify-between">
+        <label
+          htmlFor="paste-textarea"
+          className="block text-xs font-mono font-bold uppercase tracking-wider text-[var(--color-ink)]"
+        >
+          Or paste raw table data
+        </label>
+        <span className="text-[10px] font-mono text-[var(--color-ink)]/50">
+          CSV &bull; TSV &bull; JSON Array
+        </span>
+      </div>
 
       <textarea
         id="paste-textarea"
@@ -32,7 +37,7 @@ export function PasteArea({ onProcess, disabled }: PasteAreaProps) {
         onChange={(e) => setContent(e.target.value)}
         disabled={disabled}
         placeholder={`Paste comma-separated, tab-separated, or JSON air quality readings...\n\nExample:\nStation,Sampling_Date,PM2.5,PM10,NO2\nAnand Vihar,15/01/2025 08:00,240,420,65`}
-        className="w-full p-2.5 text-xs font-mono bg-[var(--color-paper)] border border-[var(--color-ink)]/30 rounded focus:border-[var(--color-ink)] focus:outline-hidden disabled:opacity-50"
+        className="w-full p-3 text-xs font-mono bg-[var(--color-paper)] border border-[var(--color-ink)]/25 rounded-md focus:border-[var(--color-ink)] focus:outline-hidden disabled:opacity-50 transition-colors"
       />
 
       <div className="flex justify-between items-center">

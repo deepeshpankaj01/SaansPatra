@@ -16,6 +16,7 @@ interface AccessibleChartProps {
   data: ChartDatum[];
   unit?: string;
   maxValue?: number;
+  referenceThreshold?: { label: string; value: number };
   className?: string;
 }
 
@@ -24,6 +25,7 @@ export function AccessibleChart({
   data,
   unit = '',
   maxValue,
+  referenceThreshold,
   className = '',
 }: AccessibleChartProps) {
   const [showTable, setShowTable] = useState(false);
@@ -46,7 +48,7 @@ export function AccessibleChart({
         <button
           type="button"
           onClick={() => setShowTable(!showTable)}
-          className="text-xs font-mono underline hover:text-[var(--color-brick)] min-h-[32px] px-2 py-1"
+          className="text-xs font-mono underline hover:text-[var(--color-brick)] min-h-[32px] px-2 py-1 cursor-pointer transition-colors"
           aria-expanded={showTable}
         >
           {showTable ? 'Switch to Bar Visual' : 'View Data Table'}
@@ -56,7 +58,7 @@ export function AccessibleChart({
       {showTable ? (
         <Table headers={tableHeaders} rows={tableRows} caption={title} />
       ) : (
-        <div className="space-y-2 border border-[var(--color-ink)]/15 p-3 rounded bg-[var(--color-paper)]">
+        <div className="space-y-2 border border-[var(--color-ink)]/15 p-3.5 rounded-lg bg-[var(--color-paper)] relative">
           {data.map((item, idx) => {
             const pct = Math.min(100, Math.round((item.value / highest) * 100));
             return (
@@ -67,9 +69,9 @@ export function AccessibleChart({
                     {item.value} {unit} {item.category ? `(${item.category})` : ''}
                   </span>
                 </div>
-                <div className="w-full h-4 bg-[var(--color-ink)]/10 rounded overflow-hidden flex border border-[var(--color-ink)]/20">
+                <div className="relative w-full h-4 bg-[var(--color-ink)]/10 rounded overflow-hidden flex border border-[var(--color-ink)]/20">
                   <div
-                    className={`h-full ${item.patternClass || ''}`}
+                    className={`h-full ${item.patternClass || ''} transition-all duration-500`}
                     style={{
                       width: `${pct}%`,
                       backgroundColor: item.color || 'var(--color-marigold)',
@@ -77,10 +79,26 @@ export function AccessibleChart({
                     role="img"
                     aria-label={`${item.label}: ${item.value} ${unit}`}
                   />
+                  {referenceThreshold && (
+                    <div
+                      className="absolute top-0 bottom-0 border-r-2 border-dashed border-red-500 z-10"
+                      style={{
+                        left: `${Math.min(100, (referenceThreshold.value / highest) * 100)}%`,
+                      }}
+                      title={`${referenceThreshold.label}: ${referenceThreshold.value} ${unit}`}
+                    />
+                  )}
                 </div>
               </div>
             );
           })}
+
+          {referenceThreshold && (
+            <div className="flex items-center justify-end gap-1.5 pt-1 text-[10px] font-mono text-red-600">
+              <span className="inline-block w-2.5 h-0.5 bg-red-500" />
+              <span>Reference Standard: {referenceThreshold.label} ({referenceThreshold.value} {unit})</span>
+            </div>
+          )}
         </div>
       )}
     </div>

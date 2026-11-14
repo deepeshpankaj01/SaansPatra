@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" width="48" height="48">
+  <defs>
+    <linearGradient id="emblem-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="25%" stop-color="#84CC16" />
+      <stop offset="50%" stop-color="#EAB308" />
+      <stop offset="75%" stop-color="#F97316" />
+      <stop offset="100%" stop-color="#991B1B" />
+    </linearGradient>
+    <radialGradient id="haze-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#F2A900" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#14213D" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Ambient Glow -->
+  <circle cx="24" cy="24" r="22" fill="url(#haze-glow)" />
+
+  <!-- Outer Ring with CPCB NAQI Haze Gradient -->
+  <circle cx="24" cy="24" r="21" stroke="url(#emblem-grad)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="90 8" />
+
+  <!-- Inner Seal -->
+  <circle cx="24" cy="24" r="16" fill="#14213D" stroke="#F5F0E6" stroke-width="1.2" />
+
+  <!-- Stylized Breath / Atmospheric Wave Motif (Saans = Breath) -->
+  <path d="M14 26 C16 20, 20 20, 23 23 C26 26, 30 26, 34 20" stroke="#F5F0E6" stroke-width="2.2" stroke-linecap="round" fill="none" />
+  <path d="M15 30 C18 25, 21 25, 24 27 C27 29, 30 29, 33 25" stroke="#F2A900" stroke-width="1.6" stroke-linecap="round" fill="none" />
+  <path d="M17 21 C19 18, 22 18, 24 19 C26 20, 28 20, 31 17" stroke="#10B981" stroke-width="1.4" stroke-linecap="round" fill="none" />
+
+  <!-- Telemetry Sensor Node Indicator -->
+  <circle cx="24" cy="14" r="2" fill="#F2A900" />
+</svg>

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 60" fill="none" width="600" height="60">
+  <style>
+    .cat-text { font-family: system-ui, -apple-system, sans-serif; font-size: 10px; font-weight: 700; text-anchor: middle; }
+    .val-text { font-family: monospace; font-size: 9px; fill: #14213D; text-anchor: middle; opacity: 0.85; }
+  </style>
+
+  <!-- Segment 1: Good (0-50) -->
+  <rect x="0" y="0" width="100" height="24" rx="2" fill="#10B981" />
+  <text x="50" y="16" class="cat-text" fill="#FFFFFF">GOOD</text>
+  <text x="50" y="40" class="val-text">0 - 50</text>
+
+  <!-- Segment 2: Satisfactory (51-100) -->
+  <rect x="100" y="0" width="100" height="24" fill="#84CC16" />
+  <text x="150" y="16" class="cat-text" fill="#14213D">SATISFACTORY</text>
+  <text x="150" y="40" class="val-text">51 - 100</text>
+
+  <!-- Segment 3: Moderate (101-200) -->
+  <rect x="200" y="0" width="100" height="24" fill="#EAB308" />
+  <text x="250" y="16" class="cat-text" fill="#14213D">MODERATE</text>
+  <text x="250" y="40" class="val-text">101 - 200</text>
+
+  <!-- Segment 4: Poor (201-300) -->
+  <rect x="300" y="0" width="100" height="24" fill="#F97316" />
+  <text x="350" y="16" class="cat-text" fill="#FFFFFF">POOR</text>
+  <text x="350" y="40" class="val-text">201 - 300</text>
+
+  <!-- Segment 5: Very Poor (301-400) -->
+  <rect x="400" y="0" width="100" height="24" fill="#EF4444" />
+  <text x="450" y="16" class="cat-text" fill="#FFFFFF">VERY POOR</text>
+  <text x="450" y="40" class="val-text">301 - 400</text>
+
+  <!-- Segment 6: Severe (401-500) -->
+  <rect x="500" y="0" width="100" height="24" rx="2" fill="#7F1D1D" />
+  <text x="550" y="16" class="cat-text" fill="#FFFFFF">SEVERE</text>
+  <text x="550" y="40" class="val-text">401 - 500+</text>
+</svg>
