@@ -10,9 +10,6 @@ jobs:
   build-and-test:
     name: Build, Lint & Test (SaansPatra)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./saanspatra
 
     env:
       CI: 'true'

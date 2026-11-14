@@ -357,7 +357,7 @@ If `GEMINI_API_KEY` is not provided or API quota is exceeded:
 ```bash
 # Clone the repository
 git clone https://github.com/deepeshpankaj01/SaansPatra.git
-cd SaansPatra/saanspatra
+cd SaansPatra
 
 # Install dependencies
 pnpm install
