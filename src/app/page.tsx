@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { AppShell } from '@/components/layout/AppShell';
+import { AppShell, WorkspaceView } from '@/components/layout/AppShell';
 import { DataDesk } from '@/components/data-desk/DataDesk';
 import { EvidenceTrail } from '@/components/evidence/EvidenceTrail';
 
@@ -34,6 +34,19 @@ const ComparePanel = dynamic(
     ),
   },
 );
+
+const CitizenAdvisory = dynamic(
+  () => import('@/components/advisory/CitizenAdvisory').then((mod) => mod.CitizenAdvisory),
+  {
+    ssr: true,
+    loading: () => (
+      <div className="p-8 text-center text-xs font-mono text-[var(--color-ink)]/60">
+        Loading Citizen Public Health Advisory...
+      </div>
+    ),
+  },
+);
+
 import { CleanedRow, QualityReport as QualityReportType } from '@/lib/cleaning/types';
 import { AnalyticsResult } from '@/lib/analytics/types';
 import { BriefingResponse } from '@/lib/gemini/schemas';
@@ -50,6 +63,10 @@ import { generateFallbackAdvisory } from '@/lib/gemini/fallback';
 import { hashObject } from '@/lib/utils/hash';
 
 export default function HomePage() {
+  // --- Workspace Navigation State ---
+  const [activeView, setActiveView] = useState<WorkspaceView>('overview');
+  const [isEvidenceDrawerOpen, setIsEvidenceDrawerOpen] = useState<boolean>(false);
+
   // --- Data State ---
   const [cleanedRows, setCleanedRows] = useState<CleanedRow[]>([]);
   const [totalRowCount, setTotalRowCount] = useState<number>(0);
@@ -151,7 +168,6 @@ export default function HomePage() {
           const updatedList = await getAllSnapshots();
           setSnapshots(updatedList);
           if (updatedList.length > 1) {
-            // Default baseline to the immediate previous one
             setSelectedSnapshotId(updatedList[1].id);
           }
         } catch (storageErr) {
@@ -218,9 +234,10 @@ export default function HomePage() {
     );
   };
 
-  // 5. Select Evidence Item from Finding click (scrolls & highlights)
+  // 5. Select Evidence Item from Finding click (opens drawer and highlights)
   const handleSelectEvidence = (evidenceId: string) => {
     setHighlightedEvidenceId(evidenceId);
+    setIsEvidenceDrawerOpen(true);
     const element = document.getElementById(`evidence-${evidenceId}`);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -301,8 +318,86 @@ export default function HomePage() {
     window.print();
   };
 
+  // 9. Reset Dataset Handler
+  const handleResetData = () => {
+    setCleanedRows([]);
+    setTotalRowCount(0);
+    setQualityReport(null);
+    setAnalytics(null);
+    setActiveDatasetLabel('');
+    setBriefing(null);
+    setValidation(null);
+    setAdvisoryText('');
+    setActiveView('overview');
+  };
+
   // Haze values for masthead header strip
   const hazeValues = analytics?.stations.map((s) => s.aqi.overall);
+
+  // Render Brief / Advisory / Compare view depending on context
+  const renderBriefComponent = () => {
+    if (activeView === 'advisory') {
+      return (
+        <CitizenAdvisory
+          advisoryText={advisoryText}
+          currentLanguage={currentLanguage}
+          currentReadingLevel={currentReadingLevel}
+          onLanguageChange={(l) => handleTranslate(l, currentReadingLevel)}
+          onReadingLevelChange={(lvl) => handleTranslate(currentLanguage, lvl)}
+          analytics={analytics}
+          isLoading={isTranslating}
+          onOpenCompare={() => {
+            setIsCompareOpen(true);
+            setActiveView('compare');
+          }}
+        />
+      );
+    }
+
+    if (activeView === 'compare' || isCompareOpen) {
+      return (
+        <ComparePanel
+          diff={diffResult}
+          narration={comparisonNarration}
+          snapshots={snapshots}
+          selectedSnapshotId={selectedSnapshotId}
+          onSelectSnapshot={setSelectedSnapshotId}
+          onCompare={handleCompare}
+          isLoading={isComparing}
+          onClose={() => {
+            setIsCompareOpen(false);
+            setActiveView('overview');
+          }}
+        />
+      );
+    }
+
+    return (
+      <BriefPanel
+        briefing={briefing}
+        validation={validation}
+        analytics={analytics}
+        selectedPersona={selectedPersona}
+        onSelectPersona={handleSelectPersona}
+        checkedActionIds={checkedActionIds}
+        onToggleAction={handleToggleAction}
+        onSelectEvidence={handleSelectEvidence}
+        onOpenCompare={() => {
+          setIsCompareOpen(true);
+          setActiveView('compare');
+        }}
+        onNavigateToAdvisory={() => setActiveView('advisory')}
+        advisoryText={advisoryText}
+        currentLanguage={currentLanguage}
+        currentReadingLevel={currentReadingLevel}
+        onLanguageChange={(l) => handleTranslate(l, currentReadingLevel)}
+        onReadingLevelChange={(lvl) => handleTranslate(currentLanguage, lvl)}
+        isTranslating={isTranslating}
+        isFallback={isFallback}
+        onPrint={handlePrint}
+      />
+    );
+  };
 
   return (
     <AppShell
@@ -311,11 +406,17 @@ export default function HomePage() {
       rowCount={cleanedRows.length}
       overallReliability={qualityReport?.overallReliability}
       isFallback={isFallback}
+      activeView={activeView}
+      onViewChange={setActiveView}
+      isEvidenceDrawerOpen={isEvidenceDrawerOpen}
+      onToggleEvidenceDrawer={() => setIsEvidenceDrawerOpen(!isEvidenceDrawerOpen)}
+      evidenceCount={analytics?.evidence.length || 0}
+      onResetData={cleanedRows.length > 0 ? handleResetData : undefined}
       dataDesk={
         <div className="space-y-4">
           {errorMessage && (
             <div
-              className="p-3 text-xs font-mono text-[var(--color-brick)] bg-[var(--color-brick)]/10 border border-[var(--color-brick)]/30 rounded"
+              className="p-3 text-xs font-mono text-[var(--color-brick)] bg-[var(--color-brick)]/10 border border-[var(--color-brick)]/30 rounded-xl"
               role="alert"
             >
               {errorMessage}
@@ -324,49 +425,18 @@ export default function HomePage() {
           <DataDesk
             onDataLoaded={handleDataLoaded}
             onGenerateBrief={() => generateBrief(analytics, selectedPersona)}
+            onNavigateToBrief={() => setActiveView('brief')}
             cleanedRows={cleanedRows}
             totalRows={totalRowCount}
             qualityReport={qualityReport}
             analytics={analytics}
             isLoading={isLoading}
             activeLabel={activeDatasetLabel}
+            onResetData={handleResetData}
           />
         </div>
       }
-      brief={
-        isCompareOpen ? (
-          <ComparePanel
-            diff={diffResult}
-            narration={comparisonNarration}
-            snapshots={snapshots}
-            selectedSnapshotId={selectedSnapshotId}
-            onSelectSnapshot={setSelectedSnapshotId}
-            onCompare={handleCompare}
-            isLoading={isComparing}
-            onClose={() => setIsCompareOpen(false)}
-          />
-        ) : (
-          <BriefPanel
-            briefing={briefing}
-            validation={validation}
-            analytics={analytics}
-            selectedPersona={selectedPersona}
-            onSelectPersona={handleSelectPersona}
-            checkedActionIds={checkedActionIds}
-            onToggleAction={handleToggleAction}
-            onSelectEvidence={handleSelectEvidence}
-            onOpenCompare={() => setIsCompareOpen(true)}
-            advisoryText={advisoryText}
-            currentLanguage={currentLanguage}
-            currentReadingLevel={currentReadingLevel}
-            onLanguageChange={(l) => handleTranslate(l, currentReadingLevel)}
-            onReadingLevelChange={(lvl) => handleTranslate(currentLanguage, lvl)}
-            isTranslating={isTranslating}
-            isFallback={isFallback}
-            onPrint={handlePrint}
-          />
-        )
-      }
+      brief={renderBriefComponent()}
       evidence={
         <EvidenceTrail
           evidence={analytics?.evidence || []}
