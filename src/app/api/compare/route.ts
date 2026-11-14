@@ -4,6 +4,13 @@ import { narrateChanges } from '@/lib/gemini/comparison';
 import { defaultRateLimiter } from '@/lib/security/rateLimiter';
 import { validateInput, compareInputSchema } from '@/lib/security/inputValidator';
 import { BriefSnapshot } from '@/lib/compare/types';
+import { LRUCache, computeHash } from '@/lib/utils/lruCache';
+
+// In-memory O(1) LRU memoization cache for snapshot comparisons
+const compareCache = new LRUCache<string, Record<string, unknown>>({
+  maxEntries: 200,
+  defaultTtlMs: 1000 * 60 * 30, // 30 minutes TTL
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,16 +36,42 @@ export async function POST(req: NextRequest) {
     const cur = currentSnapshot as BriefSnapshot;
     const prev = previousSnapshot as BriefSnapshot;
 
+    // O(1) LRU Cache Check
+    const cacheKey = computeHash({
+      curHash: cur.statsHash || cur.id,
+      prevHash: prev.statsHash || prev.id,
+      persona: cur.persona,
+    });
+    const cachedResult = compareCache.get(cacheKey);
+    if (cachedResult) {
+      return NextResponse.json(cachedResult, {
+        headers: {
+          'X-Cache': 'HIT',
+          'Cache-Control': 'public, max-age=1800, stale-while-revalidate=60',
+        },
+      });
+    }
+
     // 1. Deterministic diff
     const diff = computeDiff(cur, prev);
 
     // 2. Gemini narration of changes
     const narration = await narrateChanges(diff);
 
-    return NextResponse.json({
+    const payload = {
       success: true,
       diff,
       narration,
+    };
+
+    // Store in LRU Cache
+    compareCache.set(cacheKey, payload);
+
+    return NextResponse.json(payload, {
+      headers: {
+        'X-Cache': 'MISS',
+        'Cache-Control': 'public, max-age=1800, stale-while-revalidate=60',
+      },
     });
   } catch (error) {
     console.error('API /api/compare error:', error instanceof Error ? error.message : 'Unknown');

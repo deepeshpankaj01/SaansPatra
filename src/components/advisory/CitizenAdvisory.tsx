@@ -20,7 +20,7 @@ interface CitizenAdvisoryProps {
   isLoading?: boolean;
 }
 
-export function CitizenAdvisory({
+export const CitizenAdvisory = React.memo(function CitizenAdvisory({
   advisoryText,
   currentLanguage,
   currentReadingLevel,
@@ -125,4 +125,4 @@ export function CitizenAdvisory({
       <DisclaimerNote />
     </div>
   );
-}
+});

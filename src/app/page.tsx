@@ -1,11 +1,39 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { AppShell } from '@/components/layout/AppShell';
 import { DataDesk } from '@/components/data-desk/DataDesk';
-import { BriefPanel } from '@/components/brief/BriefPanel';
 import { EvidenceTrail } from '@/components/evidence/EvidenceTrail';
-import { ComparePanel } from '@/components/compare/ComparePanel';
+
+// Dynamic code-splitting for non-initial panels to minimize initial JS bundle
+const BriefPanel = dynamic(
+  () => import('@/components/brief/BriefPanel').then((mod) => mod.BriefPanel),
+  {
+    ssr: true,
+    loading: () => (
+      <div className="p-8 text-center space-y-2 border border-[var(--color-ink)]/15 rounded bg-[var(--color-paper)]">
+        <div className="text-xs font-mono font-bold text-[var(--color-ink)]">
+          Loading Civic Briefing Studio...
+        </div>
+      </div>
+    ),
+  },
+);
+
+const ComparePanel = dynamic(
+  () => import('@/components/compare/ComparePanel').then((mod) => mod.ComparePanel),
+  {
+    ssr: true,
+    loading: () => (
+      <div className="p-8 text-center space-y-2 border border-[var(--color-ink)]/15 rounded bg-[var(--color-paper)]">
+        <div className="text-xs font-mono font-bold text-[var(--color-ink)]">
+          Loading Cycle Comparison Engine...
+        </div>
+      </div>
+    ),
+  },
+);
 import { CleanedRow, QualityReport as QualityReportType } from '@/lib/cleaning/types';
 import { AnalyticsResult } from '@/lib/analytics/types';
 import { BriefingResponse } from '@/lib/gemini/schemas';

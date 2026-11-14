@@ -9,7 +9,7 @@ interface QualityReportProps {
   report: QualityReportType;
 }
 
-export function QualityReport({ report }: QualityReportProps) {
+export const QualityReport = React.memo(function QualityReport({ report }: QualityReportProps) {
   const chartData = Object.entries(report.stationReliability).map(([st, score]) => ({
     label: st,
     value: score,
@@ -191,4 +191,4 @@ export function QualityReport({ report }: QualityReportProps) {
       </div>
     </div>
   );
-}
+});

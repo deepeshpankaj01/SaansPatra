@@ -1,13 +1,26 @@
 'use client';
 
 import React, { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { PersonaSelector } from './PersonaSelector';
 import { VerificationBanner } from './VerificationBanner';
 import { FindingsCard } from './FindingsCard';
 import { ActionsCard } from './ActionsCard';
 import { HotspotMap } from './HotspotMap';
-import { CitizenAdvisory } from '../advisory/CitizenAdvisory';
 import { Button } from '../ui/Button';
+
+// Dynamic code-splitting for CitizenAdvisory tab
+const CitizenAdvisory = dynamic(
+  () => import('../advisory/CitizenAdvisory').then((mod) => mod.CitizenAdvisory),
+  {
+    ssr: true,
+    loading: () => (
+      <div className="p-8 text-center text-xs font-mono text-[var(--color-ink)]/60">
+        Loading Citizen Public Health Advisory...
+      </div>
+    ),
+  },
+);
 import { BriefingResponse } from '@/lib/gemini/schemas';
 import { ValidationReport } from '@/lib/grounding/validator';
 import { AnalyticsResult } from '@/lib/analytics/types';

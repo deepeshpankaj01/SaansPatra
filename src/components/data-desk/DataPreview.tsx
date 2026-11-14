@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { CleanedRow } from '@/lib/cleaning/types';
 import { Badge } from '../ui/Badge';
 import { formatDate } from '@/lib/utils/formatting';
@@ -10,22 +10,36 @@ interface DataPreviewProps {
   totalRows: number;
 }
 
-export function DataPreview({ rows, totalRows }: DataPreviewProps) {
+const INITIAL_RENDER_LIMIT = 50;
+
+export const DataPreview = React.memo(function DataPreview({ rows, totalRows }: DataPreviewProps) {
   const [filterMode, setFilterMode] = useState<'all' | 'flagged'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [renderLimit, setRenderLimit] = useState<number>(INITIAL_RENDER_LIMIT);
+
+  // Memoize flagged rows filtering
+  const flaggedRows = useMemo(() => rows.filter((r) => r.flags.length > 0), [rows]);
+
+  // Memoize displayed rows based on active filter and search query
+  const displayedRows = useMemo(() => {
+    const candidateRows = filterMode === 'flagged' ? flaggedRows : rows;
+    if (!searchQuery.trim()) return candidateRows;
+    const q = searchQuery.toLowerCase();
+    return candidateRows.filter(
+      (row) =>
+        row.stationId.toLowerCase().includes(q) ||
+        row.id.toLowerCase().includes(q) ||
+        row.flags.some((f) => f.reason.toLowerCase().includes(q)),
+    );
+  }, [filterMode, flaggedRows, rows, searchQuery]);
+
+  // Capped render slice for O(1) DOM render performance
+  const visibleRows = useMemo(
+    () => displayedRows.slice(0, renderLimit),
+    [displayedRows, renderLimit],
+  );
 
   if (rows.length === 0) return null;
-
-  const flaggedRows = rows.filter((r) => r.flags.length > 0);
-  const displayedRows = (filterMode === 'flagged' ? flaggedRows : rows).filter((row) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      row.stationId.toLowerCase().includes(q) ||
-      row.id.toLowerCase().includes(q) ||
-      row.flags.some((f) => f.reason.toLowerCase().includes(q))
-    );
-  });
 
   return (
     <div className="space-y-3">
@@ -45,7 +59,10 @@ export function DataPreview({ rows, totalRows }: DataPreviewProps) {
           <div className="inline-flex rounded-md p-0.5 bg-[var(--color-ink)]/[0.06] border border-[var(--color-ink)]/15 text-xs font-mono">
             <button
               type="button"
-              onClick={() => setFilterMode('all')}
+              onClick={() => {
+                setFilterMode('all');
+                setRenderLimit(INITIAL_RENDER_LIMIT);
+              }}
               className={`px-2.5 py-1 rounded transition-colors ${
                 filterMode === 'all'
                   ? 'bg-[var(--color-paper)] font-bold shadow-xs text-[var(--color-ink)]'
@@ -56,7 +73,10 @@ export function DataPreview({ rows, totalRows }: DataPreviewProps) {
             </button>
             <button
               type="button"
-              onClick={() => setFilterMode('flagged')}
+              onClick={() => {
+                setFilterMode('flagged');
+                setRenderLimit(INITIAL_RENDER_LIMIT);
+              }}
               className={`px-2.5 py-1 rounded transition-colors flex items-center gap-1.5 ${
                 filterMode === 'flagged'
                   ? 'bg-[var(--color-paper)] font-bold shadow-xs text-[var(--color-brick)]'
@@ -74,7 +94,10 @@ export function DataPreview({ rows, totalRows }: DataPreviewProps) {
             type="search"
             placeholder="Search station or flag..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setRenderLimit(INITIAL_RENDER_LIMIT);
+            }}
             className="px-2.5 py-1 text-xs font-mono bg-[var(--color-paper)] border border-[var(--color-ink)]/20 rounded-md focus:border-[var(--color-ink)] focus:outline-hidden w-44"
           />
         </div>
@@ -103,7 +126,7 @@ export function DataPreview({ rows, totalRows }: DataPreviewProps) {
                 </td>
               </tr>
             ) : (
-              displayedRows.map((row) => {
+              visibleRows.map((row) => {
                 const hasFlags = row.flags.length > 0;
                 return (
                   <tr
@@ -171,7 +194,21 @@ export function DataPreview({ rows, totalRows }: DataPreviewProps) {
             )}
           </tbody>
         </table>
+        {displayedRows.length > visibleRows.length && (
+          <div className="flex items-center justify-between p-2.5 bg-[var(--color-ink)]/[0.03] border-t border-[var(--color-ink)]/10 text-xs font-mono">
+            <span className="text-[var(--color-ink)]/60">
+              Showing first {visibleRows.length} of {displayedRows.length} records (O(1) DOM capped).
+            </span>
+            <button
+              type="button"
+              onClick={() => setRenderLimit((prev) => prev + 50)}
+              className="px-3 py-1 text-xs font-mono font-bold text-[var(--color-ink)] bg-[var(--color-paper)] border border-[var(--color-ink)]/20 rounded hover:bg-[var(--color-ink)]/10 transition-colors cursor-pointer"
+            >
+              Load Next 50 Rows
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
-}
+});

@@ -9,7 +9,7 @@ interface HotspotMapProps {
   hotspots: HotspotEntry[];
 }
 
-export function HotspotMap({ hotspots }: HotspotMapProps) {
+export const HotspotMap = React.memo(function HotspotMap({ hotspots }: HotspotMapProps) {
   const [selectedStation, setSelectedStation] = useState<string | null>(
     hotspots[0]?.stationId || null
   );
@@ -299,4 +299,4 @@ export function HotspotMap({ hotspots }: HotspotMapProps) {
       </div>
     </div>
   );
-}
+});

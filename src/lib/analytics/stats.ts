@@ -3,48 +3,85 @@ import { StationStats, PollutantStat, TrendDirection } from './types';
 import { calculateStationAQI } from './aqi';
 import { computeHourlyPattern } from './patterns';
 
+interface PollutantAccumulator {
+  count: number;
+  sum: number;
+  min: number;
+  max: number;
+  values: number[];
+}
+
+/**
+ * Single-pass statistical aggregation for CAAQMS monitoring stations.
+ * Computes mean, min, max, standard deviation, AQI, and linear trend in O(N) time.
+ */
 export function computeStationStats(
   rows: CleanedRow[],
   stationId: string,
 ): StationStats {
-  const stationRows = rows.filter((r) => r.stationId === stationId);
-  const readingCount = stationRows.length;
-  const flaggedCount = stationRows.filter((r) => r.flags.length > 0).length;
+  const stationRows: CleanedRow[] = [];
+  let flaggedCount = 0;
+  const accumulators: Record<string, PollutantAccumulator> = {};
 
-  // Aggregate concentrations per pollutant
-  const pollutantValues: Record<string, number[]> = {};
+  // Single-pass filter, flagged row tally, and pollutant metric accumulation
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (r.stationId !== stationId) continue;
 
-  for (const row of stationRows) {
-    for (const [pol, val] of Object.entries(row.pollutants)) {
+    stationRows.push(r);
+    if (r.flags.length > 0) {
+      flaggedCount++;
+    }
+
+    const pollutants = r.pollutants;
+    for (const pol in pollutants) {
+      const val = pollutants[pol];
       if (val !== null && val !== undefined && !isNaN(val)) {
-        if (!pollutantValues[pol]) pollutantValues[pol] = [];
-        pollutantValues[pol].push(val);
+        let acc = accumulators[pol];
+        if (!acc) {
+          acc = {
+            count: 1,
+            sum: val,
+            min: val,
+            max: val,
+            values: [val],
+          };
+          accumulators[pol] = acc;
+        } else {
+          acc.count++;
+          acc.sum += val;
+          if (val < acc.min) acc.min = val;
+          if (val > acc.max) acc.max = val;
+          acc.values.push(val);
+        }
       }
     }
   }
 
+  const readingCount = stationRows.length;
   const pollutantStats: Record<string, PollutantStat> = {};
   const pollutantMeans: Record<string, number> = {};
 
-  for (const [pol, vals] of Object.entries(pollutantValues)) {
-    if (vals.length === 0) continue;
+  for (const pol in accumulators) {
+    const acc = accumulators[pol];
+    if (acc.count === 0) continue;
 
-    const count = vals.length;
-    const sum = vals.reduce((a, b) => a + b, 0);
-    const mean = sum / count;
-    const max = Math.max(...vals);
-    const min = Math.min(...vals);
+    const mean = acc.sum / acc.count;
 
-    // Standard deviation
-    const variance =
-      vals.reduce((acc, v) => acc + Math.pow(v - mean, 2), 0) / count;
-    const stdDev = Math.sqrt(variance);
+    // Fast single-pass standard deviation
+    let varianceSum = 0;
+    const vals = acc.values;
+    for (let j = 0; j < vals.length; j++) {
+      const diff = vals[j] - mean;
+      varianceSum += diff * diff;
+    }
+    const stdDev = Math.sqrt(varianceSum / acc.count);
 
     pollutantStats[pol] = {
       mean: Math.round(mean * 10) / 10,
-      max: Math.round(max * 10) / 10,
-      min: Math.round(min * 10) / 10,
-      count,
+      max: Math.round(acc.max * 10) / 10,
+      min: Math.round(acc.min * 10) / 10,
+      count: acc.count,
       stdDev: Math.round(stdDev * 10) / 10,
     };
 
@@ -73,45 +110,62 @@ export function computeStationStats(
 }
 
 /**
- * Detect trend using linear regression on time-ordered pollutant values
+ * Detect trend using linear regression on chronological pollutant values.
+ * Employs monotonic timestamp verification to skip redundant sorting in O(N).
  */
 function detectTrend(rows: CleanedRow[]): TrendDirection {
-  // Sort rows chronologically if timestamp exists
-  const validRows = rows
-    .filter((r) => r.timestamp !== null)
-    .sort((a, b) => (a.timestamp!.getTime() - b.timestamp!.getTime()));
+  if (rows.length < 5) {
+    return 'insufficient';
+  }
+
+  // Extract dated rows and verify timestamp order in single pass
+  const validRows: CleanedRow[] = [];
+  let isMonotonic = true;
+  let lastTime = -Infinity;
+
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (r.timestamp !== null) {
+      const t = r.timestamp.getTime();
+      if (t < lastTime) {
+        isMonotonic = false;
+      }
+      lastTime = t;
+      validRows.push(r);
+    }
+  }
 
   if (validRows.length < 5) {
     return 'insufficient';
   }
 
-  // Extract PM2.5 or PM10 or any primary pollutant values over time
-  const points: { x: number; y: number }[] = [];
-  const startTime = validRows[0].timestamp!.getTime();
-
-  for (const row of validRows) {
-    const val = row.pollutants['pm25'] ?? row.pollutants['pm10'] ?? Object.values(row.pollutants)[0];
-    if (val !== null && val !== undefined && !isNaN(val)) {
-      // x in hours from start
-      const x = (row.timestamp!.getTime() - startTime) / (1000 * 60 * 60);
-      points.push({ x, y: val });
-    }
+  // Sort only if timestamps arrived out of chronological order
+  if (!isMonotonic) {
+    validRows.sort((a, b) => a.timestamp!.getTime() - b.timestamp!.getTime());
   }
 
-  if (points.length < 5) return 'insufficient';
-
-  const n = points.length;
+  const startTime = validRows[0].timestamp!.getTime();
+  let n = 0;
   let sumX = 0;
   let sumY = 0;
   let sumXY = 0;
   let sumX2 = 0;
 
-  for (const p of points) {
-    sumX += p.x;
-    sumY += p.y;
-    sumXY += p.x * p.y;
-    sumX2 += p.x * p.x;
+  // Single-pass accumulation for linear regression slope without point allocations
+  for (let i = 0; i < validRows.length; i++) {
+    const row = validRows[i];
+    const val = row.pollutants['pm25'] ?? row.pollutants['pm10'] ?? Object.values(row.pollutants)[0];
+    if (val !== null && val !== undefined && !isNaN(val)) {
+      const x = (row.timestamp!.getTime() - startTime) / (1000 * 60 * 60);
+      n++;
+      sumX += x;
+      sumY += val;
+      sumXY += x * val;
+      sumX2 += x * x;
+    }
   }
+
+  if (n < 5) return 'insufficient';
 
   const denominator = n * sumX2 - sumX * sumX;
   if (Math.abs(denominator) < 1e-9) return 'stable';

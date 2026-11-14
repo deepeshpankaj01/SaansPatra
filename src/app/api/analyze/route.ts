@@ -3,6 +3,13 @@ import { cleanDataset, generateQualityReport } from '@/lib/cleaning';
 import { analyzeDataset } from '@/lib/analytics';
 import { defaultRateLimiter } from '@/lib/security/rateLimiter';
 import { validateInput, analyzeInputSchema } from '@/lib/security/inputValidator';
+import { LRUCache, computeHash } from '@/lib/utils/lruCache';
+
+// In-memory O(1) LRU memoization cache for cleaned dataset & analytics
+const analyzeCache = new LRUCache<string, Record<string, unknown>>({
+  maxEntries: 200,
+  defaultTtlMs: 1000 * 60 * 30, // 30 minutes TTL
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -33,7 +40,19 @@ export async function POST(req: NextRequest) {
 
     const { data } = validated.data;
 
-    // 3. Clean and flag dataset
+    // 3. O(1) LRU Cache Check (keyed by dataset SHA-256 hash)
+    const cacheKey = computeHash(data);
+    const cachedResult = analyzeCache.get(cacheKey);
+    if (cachedResult) {
+      return NextResponse.json(cachedResult, {
+        headers: {
+          'X-Cache': 'HIT',
+          'Cache-Control': 'public, max-age=1800, stale-while-revalidate=60',
+        },
+      });
+    }
+
+    // 4. Clean and flag dataset
     const dataset = cleanDataset(data);
     if (dataset.rowCount === 0) {
       return NextResponse.json(
@@ -42,13 +61,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. Generate data quality report
+    // 5. Generate data quality report
     const qualityReport = generateQualityReport(dataset);
 
-    // 5. Deterministic analytics & CPCB AQI
+    // 6. Deterministic analytics & CPCB AQI
     const analytics = analyzeDataset(dataset, qualityReport);
 
-    return NextResponse.json({
+    const payload = {
       success: true,
       dataset: {
         rowCount: dataset.rowCount,
@@ -58,6 +77,16 @@ export async function POST(req: NextRequest) {
       },
       qualityReport,
       analytics,
+    };
+
+    // Store in LRU Cache
+    analyzeCache.set(cacheKey, payload);
+
+    return NextResponse.json(payload, {
+      headers: {
+        'X-Cache': 'MISS',
+        'Cache-Control': 'public, max-age=1800, stale-while-revalidate=60',
+      },
     });
   } catch (error) {
     console.error('API /api/analyze error:', error instanceof Error ? error.message : 'Unknown');

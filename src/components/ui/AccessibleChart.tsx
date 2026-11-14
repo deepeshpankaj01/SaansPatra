@@ -20,7 +20,7 @@ interface AccessibleChartProps {
   className?: string;
 }
 
-export function AccessibleChart({
+export const AccessibleChart = React.memo(function AccessibleChart({
   title,
   data,
   unit = '',
@@ -103,4 +103,4 @@ export function AccessibleChart({
       )}
     </div>
   );
-}
+});
