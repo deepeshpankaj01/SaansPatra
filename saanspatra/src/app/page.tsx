@@ -282,6 +282,7 @@ export default function HomePage() {
       datasetLabel={activeDatasetLabel}
       rowCount={cleanedRows.length}
       overallReliability={qualityReport?.overallReliability}
+      isFallback={isFallback}
       dataDesk={
         <div className="space-y-4">
           {errorMessage && (

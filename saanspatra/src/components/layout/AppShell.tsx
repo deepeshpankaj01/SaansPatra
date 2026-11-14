@@ -14,6 +14,7 @@ interface AppShellProps {
   datasetLabel?: string;
   rowCount?: number;
   overallReliability?: number;
+  isFallback?: boolean;
 }
 
 export function AppShell({
@@ -24,6 +25,7 @@ export function AppShell({
   datasetLabel,
   rowCount,
   overallReliability,
+  isFallback = false,
 }: AppShellProps) {
   const [mobileTab, setMobileTab] = useState<'desk' | 'brief' | 'evidence'>('brief');
 
@@ -119,9 +121,15 @@ export function AppShell({
               </span>
             </div>
             <div className="flex items-center gap-2 text-[10px]">
-              <span className="text-[var(--color-aqi-good)] font-bold">● SHA-256 Traced</span>
+              <span
+                className={`font-bold ${
+                  isFallback ? 'text-[var(--color-marigold)]' : 'text-[var(--color-aqi-good)]'
+                }`}
+              >
+                ● {isFallback ? 'Deterministic Engine (Offline Safe)' : 'Live Gemini 2.5 Flash'}
+              </span>
               <span className="text-[var(--color-ink)]/40">|</span>
-              <span>Gemini 2.5 Flash SDK</span>
+              <span className="text-[var(--color-aqi-good)] font-bold">SHA-256 Traced</span>
             </div>
           </div>
         </div>

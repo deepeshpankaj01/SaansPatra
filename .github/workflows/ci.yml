@@ -8,16 +8,21 @@ on:
 
 jobs:
   build-and-test:
+    name: Build, Lint & Test (SaansPatra)
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./saanspatra
 
+    env:
+      CI: 'true'
+      GEMINI_MODEL: 'gemini-2.5-flash'
+
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -27,20 +32,30 @@ jobs:
         with:
           run_install: false
 
-      - name: Install dependencies
-        run: pnpm install
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
-      - name: Type check
-        run: pnpm typecheck
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
-      - name: Lint
-        run: pnpm lint
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Unit tests
+      - name: TypeScript Strict Typecheck
+        run: pnpm run typecheck
+
+      - name: ESLint Code Quality
+        run: pnpm run lint
+
+      - name: Vitest Unit & API Suite
         run: pnpm test
 
-      - name: Build
-        run: pnpm build
-
-      - name: Security Audit
-        run: pnpm audit --audit-level=high || true
+      - name: Next.js Production Build
+        run: pnpm run build

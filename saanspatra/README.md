@@ -299,7 +299,55 @@ saanspatra/
 
 ---
 
-## 12. Quickstart Guide
+## 12. 🔐 Environment Variables & Gemini API Setup (Local & Vercel)
+
+### Required Environment Variables
+
+| Variable | Required | Default | Scope | Description |
+|---|---|---|---|---|
+| `GEMINI_API_KEY` | Optional (Dual-Engine) | `""` (Deterministic fallback) | Server-only | Google AI Studio Gemini API Key |
+| `GEMINI_MODEL` | Optional | `gemini-2.5-flash` | Server-only | Production model identifier (`gemini-2.5-flash` or `gemini-2.0-flash`) |
+
+### Step-by-Step Configuration
+
+#### 1. Obtain a Free Google Gemini API Key
+1. Navigate to [Google AI Studio](https://aistudio.google.com/app/apikey).
+2. Sign in with your Google Account and click **"Create API Key"**.
+3. Copy your generated key (`AIzaSy...`).
+
+#### 2. Local Development Setup
+Inside the `saanspatra/` directory:
+```bash
+# 1. Copy the environment template
+cp .env.example .env.local
+
+# 2. Open .env.local and paste your key
+GEMINI_API_KEY="AIzaSyYourKeyHere"
+GEMINI_MODEL="gemini-2.5-flash"
+
+# 3. Start the Next.js development server
+pnpm run dev
+```
+
+#### 3. Vercel Live Deployment Setup (`saanspatra.vercel.app`)
+When deploying the repository to Vercel:
+1. In the Vercel Project Dashboard, open **Settings &rarr; Environment Variables**.
+2. Add a new variable:
+   - **Key**: `GEMINI_API_KEY`
+   - **Value**: `AIzaSy...` (your Google AI Studio key)
+   - **Environments**: Select *Production*, *Preview*, and *Development*.
+3. (Optional) Add `GEMINI_MODEL` with value `gemini-2.5-flash`.
+4. Trigger a new deployment or push to `main` branch.
+
+#### 4. Dual-Engine Resilience (Offline Safe)
+If `GEMINI_API_KEY` is not provided or API quota is exceeded:
+- SaansPatra **never crashes or throws 500 errors**.
+- The platform automatically activates its **Deterministic Offline Fallback Engine**, executing CPCB piecewise linear interpolation and domain-verified municipal action matrices locally.
+- The UI status badge dynamically displays `[OFFLINE DETERMINISTIC ENGINE]` so jury evaluators can test the entire workflow with zero external credentials.
+
+---
+
+## 13. Quickstart Guide
 
 ### Prerequisites
 - Node.js 18+ (Node 20+ recommended)
@@ -308,17 +356,14 @@ saanspatra/
 ### Setup & Local Development
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/saanspatra.git
-cd saanspatra/saanspatra
+git clone https://github.com/deepeshpankaj01/SaansPatra.git
+cd SaansPatra/saanspatra
 
 # Install dependencies
 pnpm install
 
 # Configure environment variables (optional; app works 100% offline without key)
 cp .env.example .env.local
-# Add your GEMINI_API_KEY to .env.local if desired:
-# GEMINI_API_KEY=your_key_here
-# GEMINI_MODEL=gemini-2.5-flash
 
 # Run development server
 pnpm run dev
@@ -355,7 +400,7 @@ docker run -p 3000:3000 -e GEMINI_API_KEY="your_api_key" saanspatra
 
 ---
 
-## 13. License & Disclaimer
+## 14. License & Disclaimer
 
 - **License**: MIT License. Open-source civic intelligence platform.
 - **Medical Disclaimer**: *SaansPatra provides ambient air quality intelligence and administrative guidance based on CPCB standards. It does not provide medical diagnoses or individual clinical prescriptions. Individuals experiencing acute respiratory symptoms should seek immediate professional medical attention.*
