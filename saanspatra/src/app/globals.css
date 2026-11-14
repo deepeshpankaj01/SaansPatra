@@ -1,0 +1,266 @@
+@import "tailwindcss";
+
+/* ── Design Tokens ─────────────────────────────────────────────── */
+@theme {
+  /* Core palette */
+  --color-paper: #F5F0E6;
+  --color-ink: #14213D;
+  --color-marigold: #F2A900;
+  --color-brick: #B23A2E;
+
+  /* AQI haze ramp */
+  --color-aqi-good: #A8C686;
+  --color-aqi-satisfactory: #D4C78F;
+  --color-aqi-moderate: #E8A849;
+  --color-aqi-poor: #D97B2B;
+  --color-aqi-verypoor: #B23A2E;
+  --color-aqi-severe: #3D1B2F;
+
+  /* Typography */
+  --font-heading: 'Fraunces', serif;
+  --font-body: 'IBM Plex Sans', sans-serif;
+  --font-data: 'IBM Plex Mono', monospace;
+}
+
+/* ── Base Styles ───────────────────────────────────────────────── */
+html {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
+
+body {
+  min-height: 100dvh;
+}
+
+/* ── Skip Link (a11y) ──────────────────────────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 9999;
+  padding: 0.5rem 1rem;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-weight: 600;
+  border-radius: 0 0 0.25rem 0.25rem;
+  transition: top 0.15s ease;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* ── Haze Strip ────────────────────────────────────────────────── */
+.haze-strip {
+  height: 0.5rem;
+  width: 100%;
+  background: linear-gradient(
+    to right,
+    var(--color-aqi-good),
+    var(--color-aqi-satisfactory),
+    var(--color-aqi-moderate),
+    var(--color-aqi-poor),
+    var(--color-aqi-verypoor),
+    var(--color-aqi-severe)
+  );
+}
+
+/* ── Stamp Badges ──────────────────────────────────────────────── */
+.stamp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  font-family: var(--font-data);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-width: 2px;
+  border-style: solid;
+  border-radius: 0.25rem;
+}
+
+.stamp-verified {
+  border-color: var(--color-marigold);
+  color: var(--color-marigold);
+}
+
+.stamp-unverified {
+  border-color: var(--color-brick);
+  color: var(--color-brick);
+}
+
+.stamp-provisional {
+  border-color: var(--color-marigold);
+  border-style: dashed;
+  color: var(--color-ink);
+}
+
+/* ── AQI Pattern Classes ──────────────────────────────────────── */
+.aqi-pattern-good {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    var(--color-aqi-good) 4px,
+    var(--color-aqi-good) 5px
+  );
+}
+
+.aqi-pattern-satisfactory {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 6px,
+    var(--color-aqi-satisfactory) 6px,
+    var(--color-aqi-satisfactory) 7px
+  );
+}
+
+.aqi-pattern-moderate {
+  background-image: radial-gradient(
+    circle,
+    var(--color-aqi-moderate) 1px,
+    transparent 1px
+  );
+  background-size: 8px 8px;
+}
+
+.aqi-pattern-poor {
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 4px,
+      var(--color-aqi-poor) 4px,
+      var(--color-aqi-poor) 5px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 4px,
+      var(--color-aqi-poor) 4px,
+      var(--color-aqi-poor) 5px
+    );
+}
+
+.aqi-pattern-verypoor {
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 3px,
+      var(--color-aqi-verypoor) 3px,
+      var(--color-aqi-verypoor) 4px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 3px,
+      var(--color-aqi-verypoor) 3px,
+      var(--color-aqi-verypoor) 4px
+    );
+}
+
+.aqi-pattern-severe {
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      var(--color-aqi-severe) 2px,
+      var(--color-aqi-severe) 3px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 2px,
+      var(--color-aqi-severe) 2px,
+      var(--color-aqi-severe) 3px
+    );
+}
+
+/* ── Focus Visible (keyboard nav) ─────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-marigold);
+  outline-offset: 2px;
+}
+
+/* ── High Contrast Theme ──────────────────────────────────────── */
+[data-theme='high-contrast'] {
+  --color-paper: #FFFFFF;
+  --color-ink: #000000;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+}
+
+[data-theme='high-contrast'] .stamp-badge {
+  border-width: 3px;
+}
+
+[data-theme='high-contrast'] :focus-visible {
+  outline-width: 3px;
+  outline-color: #000000;
+}
+
+/* ── Night Shift Theme ────────────────────────────────────────── */
+[data-theme='night-shift'] {
+  --color-paper: #1A1F2E;
+  --color-ink: #E0E0E0;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+}
+
+/* ── Text Size Scaling ────────────────────────────────────────── */
+[data-text-size='large'] {
+  font-size: 1.25rem;
+}
+
+/* ── Reduced Motion ───────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Print Styles ─────────────────────────────────────────────── */
+@media print {
+  nav,
+  .skip-link,
+  .haze-strip,
+  button,
+  [role='navigation'] {
+    display: none !important;
+  }
+
+  body {
+    background: #FFFFFF;
+    color: #000000;
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+
+  main {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  a[href]::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.85em;
+    color: #555;
+  }
+
+  .stamp-badge {
+    border-color: #000 !important;
+    color: #000 !important;
+  }
+}
