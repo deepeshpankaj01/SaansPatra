@@ -14,7 +14,11 @@
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "vercel-build": "next build"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   },
   "dependencies": {
     "@google/genai": "^3.3.0",
