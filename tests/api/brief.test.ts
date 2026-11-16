@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { POST } from '@/lib/../app/api/brief/route';
+import { POST } from '@/app/api/brief/route';
 import { NextRequest } from 'next/server';
 
 describe('POST /api/brief', () => {
